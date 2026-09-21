@@ -6,12 +6,12 @@ Ein Projekt für das STM32 Nucleo-F303RE Board. Das System liest RFID-Karten üb
 
 ## Verwendete Hardware
 
-* **Mikrocontroller**: STM32 Nucleo-F303RE (ARM Cortex-M4)
-* **RFID-Reader**: MFRC522 (13.56 MHz, Anbindung per SPI)
-* **Display**: 0,96" OLED-Display mit SSD1306-Controller (128x64 Pixel, I2C)
-* **Servomotor**: SG90 9g Micro-Servo (Ansteuerung per PWM)
-* **Analog-Joystick**: 2-Achsen-Joystick mit Taster (z. B. KY-023)
-* **Status-LEDs**: 3 LEDs (Rot, Grün, Blau) mit Vorwiderständen (oder eine RGB-LED mit gemeinsamer Kathode)
+* **Mikrocontroller**: STM32 Nucleo-F303RE
+* **RFID-Reader**: MFRC522 (Anbindung per SPI)
+* **Display**: 0,96" OLED-Display mit SSD1306-Controller (Anbindung per I2C)
+* **Servomotor**: Micro-Servo (Ansteuerung per PWM)
+* **Analog-Joystick**: 2-Achsen-Joystick mit Taster
+* **Status-LEDs**: RGB LED
 * **Taster**: Blauer Onboard-Button (B1 / PC13) auf dem Nucleo-Board
 
 ---
