@@ -109,9 +109,3 @@ Falls gerade keine Karte zur Hand ist, kann das System per Joystick-Geste freige
 2. Das Board per USB-Kabel verbinden.
 3. Auf **Run** oder **Debug** klicken – die IDE kompiliert das Projekt und überträgt das Programm automatisch auf den Mikrocontroller.
 
-### Per Make / Kommandozeile
-Im Projektverzeichnis:
-```bash
-make -C Debug all
-```
-Die erzeugte `RC522Projekt.elf` bzw. `RC522Projekt.bin` kann anschließend mit dem `STM32CubeProgrammer` oder per OpenOCD geflasht werden.
