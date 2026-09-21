@@ -18,6 +18,11 @@ Ein Projekt für das STM32 Nucleo-F303RE Board. Das System liest RFID-Karten üb
 
 ## Pinbelegung / Verkabelung
 
+<img width="827" height="683" alt="image" src="https://github.com/user-attachments/assets/7ae6e894-4127-4bb8-8544-820e4ae8d878" />
+
+<img width="1217" height="996" alt="image" src="https://github.com/user-attachments/assets/9fbcb6a2-513a-42b2-b368-90ae789497e2" />
+
+
 ### 1. RFID-Modul (MFRC522 an SPI2)
 | RC522 Pin | STM32 Pin | Beschreibung |
 | :--- | :--- | :--- |
