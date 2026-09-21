@@ -2,7 +2,13 @@
 
 Ein Projekt für das STM32 Nucleo-F303RE Board. Das System liest RFID-Karten über ein RC522-Modul ein, zeigt den Status auf einem 0,96" OLED-Display an und schaltet bei Berechtigung einen Servomotor frei. Dieser kann anschließend manuell per Joystick gesteuert oder in einen automatischen Schwenkmodus (Sweep) versetzt werden.
 
-![System-Blockdiagramm](blockdiagramm.svg)
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=aio0vg1aWxY">
+    <img src="https://img.youtube.com/vi/aio0vg1aWxY/maxresdefault.jpg" alt="Video ansehen" width="600">
+  </a>
+  <br>
+  <em> Video-Demo des Systems auf YouTube ansehen</em>
+</p>
 
 ---
 
