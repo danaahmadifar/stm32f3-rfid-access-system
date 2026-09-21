@@ -36,6 +36,8 @@ void AccessControl_Lock(void);
 void AccessControl_UnlockViaPin(void);
 const char* AccessControl_GetActiveCardName(void);
 bool AccessControl_IsWrongCardBlocked(void);
+bool AccessControl_IsAdminLockout(void);
+uint8_t AccessControl_GetConsecutiveFailures(void);
 
 // Zweistufiger Anlernmodus
 void AccessControl_StartLearn(void);

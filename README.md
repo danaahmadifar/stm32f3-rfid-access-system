@@ -2,16 +2,18 @@
 
 Ein Projekt für das STM32 Nucleo-F303RE Board. Das System liest RFID-Karten über ein RC522-Modul ein, zeigt den Status auf einem 0,96" OLED-Display an und schaltet bei Berechtigung einen Servomotor frei. Dieser kann anschließend manuell per Joystick gesteuert oder in einen automatischen Schwenkmodus (Sweep) versetzt werden.
 
+![System-Blockdiagramm](blockdiagramm.svg)
+
 ---
 
 ## Verwendete Hardware
 
-* **Mikrocontroller**: STM32 Nucleo-F303RE
-* **RFID-Reader**: MFRC522 (Anbindung per SPI)
-* **Display**: 0,96" OLED-Display mit SSD1306-Controller (Anbindung per I2C)
-* **Servomotor**: Micro-Servo (Ansteuerung per PWM)
-* **Analog-Joystick**: 2-Achsen-Joystick mit Taster
-* **Status-LEDs**: RGB LED
+* **Mikrocontroller**: STM32 Nucleo-F303RE (ARM Cortex-M4)
+* **RFID-Reader**: MFRC522 (13.56 MHz, Anbindung per SPI)
+* **Display**: 0,96" OLED-Display mit SSD1306-Controller (128x64 Pixel, I2C)
+* **Servomotor**: SG90 9g Micro-Servo (Ansteuerung per PWM)
+* **Analog-Joystick**: 2-Achsen-Joystick mit Taster (z. B. KY-023)
+* **Status-LEDs**: 3 LEDs (Rot, Grün, Blau) mit Vorwiderständen (oder eine RGB-LED mit gemeinsamer Kathode)
 * **Taster**: Blauer Onboard-Button (B1 / PC13) auf dem Nucleo-Board
 
 ---
@@ -61,9 +63,9 @@ Ein Projekt für das STM32 Nucleo-F303RE Board. Das System liest RFID-Karten üb
 ### 5. Status-LEDs
 | LED-Farbe | STM32 Pin | Zustand |
 | :--- | :--- | :--- |
-| **Rot** | PA4 | Alarm bei falscher Karte / Warnung |
-| **Blau** | PA5 | Gesperrt / Bereit |
-| **Grün** | PA6 | Entsperrt / Freigabe |
+| **Rot** | PA4 | Alarm bei falscher Karte / Dauer-Rot bei Sicherheits-Lockout / Warnblinken |
+| **Blau** | PA5 | Gesperrt / Bereit (1 s Blinkanimation nach Sperren, danach Dauer-Blau) |
+| **Grün** | PA6 | Entsperrt / Freigabe (1 s Blinkanimation nach Freischalten, danach Dauer-Grün) |
 
 ---
 
@@ -71,12 +73,14 @@ Ein Projekt für das STM32 Nucleo-F303RE Board. Das System liest RFID-Karten üb
 
 ### 1. Freischalten und Sperren
 * Im Grundzustand ist das System verriegelt. Die blaue LED leuchtet und das OLED zeigt `GESPERRT`. Der Servo steht fest auf 90°.
-* Wird eine berechtigte Karte vorgehalten, leuchtet die grüne LED auf, das Display begrüßt den Nutzer (z. B. `Hallo Dana!`) und die Servosteuerung wird aktiv.
+* **Freischalten**: Wird eine berechtigte Karte vorgehalten (oder der Geheimcode eingegeben), blinkt die grüne LED für 1 Sekunde zur optischen Bestätigung und geht danach auf Dauer-Grün. Das Display begrüßt den Nutzer (z. B. `Hallo Dana!`) und die Servosteuerung wird aktiv.
+* **Sperren**: Wird das System gesperrt (per Karte oder Auto-Lock), blinkt die blaue LED für 1 Sekunde und leuchtet anschließend dauerhaft blau.
 * **Kartenbindung beim Sperren**: Nur die Karte, die das System freigeschaltet hat, kann es auch wieder sperren. Hält ein anderer Nutzer seine Karte vor, bleibt das System offen: Das Display warnt (`Nur Freischalter kann sperren!`) und die rote LED blinkt kurz auf.
 
-### 2. Automatischer Lock & Alarm
+### 2. Automatischer Lock, Alarm & Sicherheits-Lockout
 * **Auto-Lock**: Bleibt das System freigeschaltet und der Joystick wird 15 Sekunden lang nicht berührt, verriegelt sich das System automatisch. Der Servo fährt dabei auf die 90°-Mittelposition zurück.
-* **Alarm**: Hält jemand eine unbekannte Karte vor, ertönt der Alarm-Modus (rote LED an, Display zeigt `ALARM! Kein Zutritt!`). Nach 5 Sekunden schaltet sich der Alarm selbst ab. Über den blauen Nucleo-Button (B1) kann der Alarm auch sofort manuell beendet werden.
+* **Alarm**: Hält jemand eine unbekannte Karte vor, wird der Alarm ausgelöst (rote LED an, Display zeigt `ALARM! Fehlversuch X/5`). Nach 5 Sekunden schaltet sich der Alarm selbst ab. Über den blauen Nucleo-Button (B1) kann der Alarm vorzeitig quittiert werden.
+* **Sicherheits-Sperre (Lockout nach 5 Fehlversuchen)**: Nach 5 aufeinanderfolgenden Fehlversuchen im verriegelten Zustand schaltet das System in den Sicherheits-Lockout (`GESPERRT! 5 Fehlversuche / Admin-Karte noetig`). In diesem Zustand leuchtet die rote LED dauerhaft. PIN-Eingabe, Anlernmodus und normale Nutzerkarten sind blockiert. Das System kann ausschließlich durch die hinterlegte Admin-Karte wieder freigeschaltet werden.
 
 ### 3. Zweistufiger Anlernmodus für neue Karten
 1. Den blauen Nucleo-Button (**B1**) drücken.
@@ -116,6 +120,6 @@ Falls gerade keine Karte zur Hand ist, kann das System per Joystick-Geste freige
 
 ## BEKANNTE BUGS
 
-1. Momentan bleibt die LED teilweise hängen bei einer Farbe. Ursache noch unklar.
+1. Momentan bleibt die LED teilweise hängen bei einer Farbe. Ursache noch unklar. (Behoben durch neue Animations- und Zustandslogik)
 2. Die LED flackert bei hohen Geschwindigkeitseinstellungen des Servos. Ursache ist wahrscheinlich hoher Stromverbrauch des Servos.
 3. Notfall-PIN wird teilweise nicht erkannt. Ursache ist wahrscheinlich die Hardware selbst. (Alter Joystick)

@@ -1,0 +1,19 @@
+# STM32CubeIDE Build-Ordner
+Debug/
+Release/
+
+# Core Temp-Dateien
+*.o
+*.d
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+*.su
+*.cyclo
+
+# Eclipse / STM32CubeIDE Workspace-Metadaten
+.settings/
+.project
+.cproject

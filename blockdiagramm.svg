@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="100%" height="100%" style="background:#1e1e24; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Pfeilspitze Definition -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#8892b0" />
+    </marker>
+    <!-- Schatteneffekt -->
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Titel -->
+  <text x="480" y="55" text-anchor="middle" fill="#f8fafc" font-size="24" font-weight="700" letter-spacing="1">SYSTEM-BLOCKDIAGRAMM</text>
+  <text x="480" y="82" text-anchor="middle" fill="#94a3b8" font-size="14">STM32 RFID-Zugangskontrolle mit Servomotor &amp; OLED</text>
+
+  <!-- BEREICH: EINGABEN -->
+  <g transform="translate(60, 130)">
+    <!-- Rahmen Eingänge -->
+    <rect x="0" y="0" width="220" height="340" rx="14" fill="#262b36" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="6,4"/>
+    <text x="110" y="32" text-anchor="middle" fill="#60a5fa" font-size="14" font-weight="700">EINGABEN (SENSOREN)</text>
+
+    <!-- Block 1: RFID -->
+    <rect x="20" y="55" width="180" height="70" rx="10" fill="#1e293b" stroke="#475569" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="110" y="87" text-anchor="middle" fill="#f1f5f9" font-size="15" font-weight="600">RFID-Reader</text>
+    <text x="110" y="107" text-anchor="middle" fill="#94a3b8" font-size="12">RC522 (SPI)</text>
+
+    <!-- Block 2: Joystick -->
+    <rect x="20" y="145" width="180" height="70" rx="10" fill="#1e293b" stroke="#475569" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="110" y="177" text-anchor="middle" fill="#f1f5f9" font-size="15" font-weight="600">Analog-Joystick</text>
+    <text x="110" y="197" text-anchor="middle" fill="#94a3b8" font-size="12">2 Achsen (ADC) + Taste</text>
+
+    <!-- Block 3: Button B1 -->
+    <rect x="20" y="235" width="180" height="70" rx="10" fill="#1e293b" stroke="#475569" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="110" y="267" text-anchor="middle" fill="#f1f5f9" font-size="15" font-weight="600">Bedientaster B1</text>
+    <text x="110" y="287" text-anchor="middle" fill="#94a3b8" font-size="12">Anlernen &amp; Quittieren</text>
+  </g>
+
+  <!-- PFEILE: Eingänge -> STM32 -->
+  <line x1="260" y1="220" x2="360" y2="250" stroke="#8892b0" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="260" y1="310" x2="360" y2="300" stroke="#8892b0" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="260" y1="400" x2="360" y2="350" stroke="#8892b0" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- BEREICH: MIKROCONTROLLER (ZENTRUM) -->
+  <g transform="translate(370, 160)">
+    <rect x="0" y="0" width="220" height="280" rx="16" fill="#0f172a" stroke="#0ea5e9" stroke-width="2.5" filter="url(#shadow)"/>
+    
+    <!-- Chip Icon Header -->
+    <rect x="75" y="-12" width="70" height="24" rx="6" fill="#0ea5e9"/>
+    <text x="110" y="4" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="800">MCU</text>
+
+    <text x="110" y="55" text-anchor="middle" fill="#38bdf8" font-size="18" font-weight="700">STM32</text>
+    <text x="110" y="78" text-anchor="middle" fill="#e2e8f0" font-size="14" font-weight="600">Nucleo-F303RE</text>
+    
+    <!-- Trennlinie -->
+    <line x1="25" y1="98" x2="195" y2="98" stroke="#334155" stroke-width="1.5"/>
+
+    <!-- Funktionsübersicht im MCU -->
+    <text x="110" y="130" text-anchor="middle" fill="#94a3b8" font-size="13">Zutrittskontrolle</text>
+    <text x="110" y="152" text-anchor="middle" fill="#94a3b8" font-size="13">Servoregelung &amp; Sweep</text>
+    <text x="110" y="174" text-anchor="middle" fill="#94a3b8" font-size="13">Gesten-PIN Backup</text>
+    <text x="110" y="196" text-anchor="middle" fill="#94a3b8" font-size="13">Display-Manager</text>
+    <text x="110" y="218" text-anchor="middle" fill="#94a3b8" font-size="13">Auto-Lock Timer</text>
+
+    <!-- Takt / Status Badge -->
+    <rect x="40" y="240" width="140" height="24" rx="12" fill="#1e293b"/>
+    <text x="110" y="256" text-anchor="middle" fill="#0ea5e9" font-size="11" font-weight="600">72 MHz ARM Cortex-M4</text>
+  </g>
+
+  <!-- PFEILE: STM32 -> Ausgänge -->
+  <line x1="600" y1="250" x2="700" y2="220" stroke="#8892b0" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="600" y1="300" x2="700" y2="310" stroke="#8892b0" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <line x1="600" y1="350" x2="700" y2="400" stroke="#8892b0" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- BEREICH: AUSGABEN -->
+  <g transform="translate(680, 130)">
+    <!-- Rahmen Ausgänge -->
+    <rect x="0" y="0" width="220" height="340" rx="14" fill="#262b36" stroke="#10b981" stroke-width="1.5" stroke-dasharray="6,4"/>
+    <text x="110" y="32" text-anchor="middle" fill="#34d399" font-size="14" font-weight="700">AUSGABEN (AKTOREN)</text>
+
+    <!-- Block 1: OLED -->
+    <rect x="20" y="55" width="180" height="70" rx="10" fill="#1e293b" stroke="#475569" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="110" y="87" text-anchor="middle" fill="#f1f5f9" font-size="15" font-weight="600">OLED-Display</text>
+    <text x="110" y="107" text-anchor="middle" fill="#94a3b8" font-size="12">SSD1306 (I2C) 128x64</text>
+
+    <!-- Block 2: Servo -->
+    <rect x="20" y="145" width="180" height="70" rx="10" fill="#1e293b" stroke="#475569" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="110" y="177" text-anchor="middle" fill="#f1f5f9" font-size="15" font-weight="600">Servomotor</text>
+    <text x="110" y="197" text-anchor="middle" fill="#94a3b8" font-size="12">SG90 (PWM, 50 Hz)</text>
+
+    <!-- Block 3: LEDs -->
+    <rect x="20" y="235" width="180" height="70" rx="10" fill="#1e293b" stroke="#475569" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="110" y="267" text-anchor="middle" fill="#f1f5f9" font-size="15" font-weight="600">Status-LEDs</text>
+    <text x="110" y="287" text-anchor="middle" fill="#94a3b8" font-size="12">Rot, Blau, Grün</text>
+  </g>
+</svg>
