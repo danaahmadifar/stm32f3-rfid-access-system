@@ -120,6 +120,6 @@ Falls gerade keine Karte zur Hand ist, kann das System per Joystick-Geste freige
 
 ## BEKANNTE BUGS
 
-1. Momentan bleibt die LED teilweise hängen bei einer Farbe. Ursache noch unklar. (Behoben durch neue Animations- und Zustandslogik)
+1. Momentan bleibt die LED teilweise hängen bei einer Farbe. Ursache noch unklar.
 2. Die LED flackert bei hohen Geschwindigkeitseinstellungen des Servos. Ursache ist wahrscheinlich hoher Stromverbrauch des Servos.
 3. Notfall-PIN wird teilweise nicht erkannt. Ursache ist wahrscheinlich die Hardware selbst. (Alter Joystick)
