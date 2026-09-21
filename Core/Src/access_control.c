@@ -39,6 +39,14 @@ static uint8_t entsperrende_uid[4];
 static bool hat_sperrkarte = false;
 static uint32_t falsche_sperrkarte_timer = 0;
 
+// Feedback-Blinkanimation beim Statuswechsel (1 s Dauer)
+static uint32_t transition_animation_timer = 0;
+static bool transition_animation_is_unlock = false;
+
+// Sicherheits-Lockout nach 5 Fehlversuchen
+static uint8_t aufeinanderfolgende_fehlversuche = 0;
+static bool admin_lockout = false;
+
 // Statistik-Zaehler
 static uint32_t erfolgreiche_scans = 0;
 static uint32_t fehlversuche = 0;
@@ -87,8 +95,9 @@ static void leds_aktualisieren(void)
     }
 
     if (falsche_sperrkarte_timer > 0) {
-        if (HAL_GetTick() - falsche_sperrkarte_timer < 2000) {
-            uint32_t blink = (HAL_GetTick() / 150) % 2;
+        uint32_t delta = HAL_GetTick() - falsche_sperrkarte_timer;
+        if (delta < 2000) {
+            uint32_t blink = (delta / 150) % 2;
             leds_setzen(blink == 0, false, false); // Rotes Warnblinken bei unbefugtem Verriegelungsversuch
             return;
         } else {
@@ -96,9 +105,28 @@ static void leds_aktualisieren(void)
         }
     }
 
-    if (alarm_an) {
-        leds_setzen(true, false, false);   // Rot = Alarmzustand
-    } else if (zugriff_erlaubt) {
+    if (admin_lockout || alarm_an) {
+        leds_setzen(true, false, false);   // Rot = Alarmzustand oder Sicherheits-Lockout
+        return;
+    }
+
+    // 1-Sekunden-Blinkanimation beim Statuswechsel (Freischalten = Gruen, Sperren = Blau)
+    if (transition_animation_timer > 0) {
+        uint32_t delta = HAL_GetTick() - transition_animation_timer;
+        if (delta < 1000) {
+            uint32_t phase = (delta / 125) % 2;
+            if (transition_animation_is_unlock) {
+                leds_setzen(false, phase == 0, false); // Gruenes Feedback-Blinken beim Freischalten
+            } else {
+                leds_setzen(false, false, phase == 0); // Blaues Feedback-Blinken beim Sperren
+            }
+            return;
+        } else {
+            transition_animation_timer = 0; // Animation abgeschlossen
+        }
+    }
+
+    if (zugriff_erlaubt) {
         leds_setzen(false, true, false);   // Gruen = Freigegeben
     } else {
         leds_setzen(false, false, true);   // Blau = Verriegelt / Bereit
@@ -117,10 +145,14 @@ void AccessControl_Init(MFRC522_t *rfidHandle)
     hat_sperrkarte = false;
     memset(entsperrende_uid, 0, sizeof(entsperrende_uid));
     falsche_sperrkarte_timer = 0;
+    transition_animation_timer = 0;
+    transition_animation_is_unlock = false;
     kartenWarten = false;
 
     learn_state = LEARN_INAKTIV;
     anzahl_karten = 1;
+    aufeinanderfolgende_fehlversuche = 0;
+    admin_lockout = false;
 
     // Standard-Admin-Karte registrieren
     uint8_t default_uid[4] = {0xE3, 0x7C, 0x7F, 0x0D};
@@ -137,7 +169,7 @@ void AccessControl_Init(MFRC522_t *rfidHandle)
 
 void AccessControl_StartLearn(void)
 {
-    if (learn_state != LEARN_INAKTIV) {
+    if (learn_state != LEARN_INAKTIV || admin_lockout) {
         return;
     }
     learn_state = LEARN_WARTE_NEUE_KARTE;
@@ -145,6 +177,7 @@ void AccessControl_StartLearn(void)
     aktueller_status = STATUS_ANLERNEN;
     zugriff_erlaubt = false;
     hat_sperrkarte = false;
+    transition_animation_timer = 0;
     kartenWarten = false;
     leds_aktualisieren();
 }
@@ -153,6 +186,7 @@ void AccessControl_CancelLearn(void)
 {
     learn_state = LEARN_INAKTIV;
     aktueller_status = STATUS_BEREIT;
+    transition_animation_timer = 0;
     kartenWarten = false;
     leds_aktualisieren();
 }
@@ -174,7 +208,11 @@ uint32_t AccessControl_GetLearnTimeoutRemaining(void)
 
 void AccessControl_ResetAlarm(void)
 {
+    if (admin_lockout) {
+        return; // Im Sicherheits-Lockout kann der Zustand nicht manuell quittiert werden
+    }
     alarm_an = false;
+    transition_animation_timer = 0;
     aktueller_status = STATUS_BEREIT;
     leds_aktualisieren();
 }
@@ -185,16 +223,24 @@ void AccessControl_Lock(void)
     hat_sperrkarte = false;
     alarm_an = false;
     falsche_sperrkarte_timer = 0;
+    transition_animation_timer = HAL_GetTick();
+    transition_animation_is_unlock = false;
     aktueller_status = STATUS_BEREIT;
     leds_aktualisieren();
 }
 
 void AccessControl_UnlockViaPin(void)
 {
+    if (admin_lockout) {
+        return; // Im Sicherheits-Lockout ist PIN-Entsperrung deaktiviert
+    }
     alarm_an = false;
     zugriff_erlaubt = true;
     hat_sperrkarte = false; // Entsperrung via PIN: universelle Sperrberechtigung
     falsche_sperrkarte_timer = 0;
+    aufeinanderfolgende_fehlversuche = 0;
+    transition_animation_timer = HAL_GetTick();
+    transition_animation_is_unlock = true;
     strncpy(aktiver_karten_name, "PIN-Code", sizeof(aktiver_karten_name));
     erfolgreiche_scans++;
     aktueller_status = STATUS_ERLAUBT;
@@ -225,7 +271,9 @@ void AccessControl_Task(void)
     // 1. Alarm-Timeout pruefen (automatische Deaktivierung nach 5 s)
     if (alarm_an && (jetzt - alarm_start_zeit >= ALARM_TIMEOUT_MS)) {
         alarm_an = false;
-        aktueller_status = STATUS_BEREIT;
+        if (!admin_lockout) {
+            aktueller_status = STATUS_BEREIT;
+        }
         leds_aktualisieren();
     }
 
@@ -261,7 +309,7 @@ void AccessControl_Task(void)
     if (kartenWarten) {
         if (MFRC522_RequestA(rfID, atqa_buf) != STATUS_OK) {
             kartenWarten = false; // Transponder aus dem Erfassungsbereich entfernt
-            if (learn_state == LEARN_INAKTIV && aktueller_status != STATUS_VERWEIGERT) {
+            if (learn_state == LEARN_INAKTIV && aktueller_status != STATUS_VERWEIGERT && !admin_lockout) {
                 aktueller_status = STATUS_BEREIT;
             }
         }
@@ -317,34 +365,76 @@ void AccessControl_Task(void)
 
     // --- NORMALER BETRIEBSMODUS ---
     int card_idx = find_card_index(gelesene_uid);
-    if (card_idx >= 0) {
-        alarm_an = false;
-        if (!zugriff_erlaubt) {
-            // Freischaltung: UID erfassen und Eigentuemer-Bindung setzen
+
+    if (admin_lockout) {
+        // System befindet sich im Sicherheits-Lockout (5 Fehlversuche):
+        // Ausschliesslich die Admin-Karte (Index 0 / Dana) kann das System wieder freischalten
+        if (card_idx == 0) {
+            admin_lockout = false;
+            aufeinanderfolgende_fehlversuche = 0;
+            alarm_an = false;
+            zugriff_erlaubt = true;
+            hat_sperrkarte = true;
+            memcpy(entsperrende_uid, gelesene_uid, 4);
+            strncpy(aktiver_karten_name, gueltige_karten[0].name, sizeof(aktiver_karten_name));
+            erfolgreiche_scans++;
+            aktueller_status = STATUS_ERLAUBT;
+            transition_animation_timer = jetzt;
+            transition_animation_is_unlock = true;
+        } else {
+            // Nicht-Admin-Karte oder unbekannte Karte: Zugriff weiterhin blockiert
+            alarm_an = true;
+            alarm_start_zeit = jetzt;
+            transition_animation_timer = 0;
+            fehlversuche++;
+            aktueller_status = STATUS_VERWEIGERT;
+        }
+    } else if (!zugriff_erlaubt) {
+        // System ist verriegelt: Nur autorisierte UIDs duerfen freischalten
+        if (card_idx >= 0) {
+            alarm_an = false;
             zugriff_erlaubt = true;
             hat_sperrkarte = true;
             memcpy(entsperrende_uid, gelesene_uid, 4);
             strncpy(aktiver_karten_name, gueltige_karten[card_idx].name, sizeof(aktiver_karten_name));
             erfolgreiche_scans++;
+            aufeinanderfolgende_fehlversuche = 0; // Erfolgreicher Zugang setzt Zaehler zurueck
             aktueller_status = STATUS_ERLAUBT;
+            transition_animation_timer = jetzt;
+            transition_animation_is_unlock = true;
         } else {
-            // Verriegelung: Zugriff nur gestatten, wenn dieselbe Karte verwendet wird
+            // Unbekannte UID im verriegelten Zustand: Fehlversuch registrieren
+            aufeinanderfolgende_fehlversuche++;
+            fehlversuche++;
+            if (aufeinanderfolgende_fehlversuche >= 5) {
+                admin_lockout = true; // Sicherheits-Lockout nach 5 Fehlversuchen
+            }
+            alarm_an = true;
+            alarm_start_zeit = jetzt;
+            transition_animation_timer = 0;
+            aktueller_status = STATUS_VERWEIGERT;
+        }
+    } else {
+        // System ist freigegeben: Verriegelungsberechtigung pruefen
+        if (card_idx >= 0) {
+            // Bei kartenbasierter Freigabe darf nur dieselbe Karte wieder verriegeln
             if (hat_sperrkarte && memcmp(gelesene_uid, entsperrende_uid, 4) != 0) {
-                falsche_sperrkarte_timer = jetzt; // Unbefugter Sperrversuch
+                falsche_sperrkarte_timer = jetzt; // Abweichende bekannte Karte
+                transition_animation_timer = 0;
             } else {
+                // Berechtigte Karte (oder beliebige bekannte Karte nach PIN-Unlock): System sperren
                 zugriff_erlaubt = false;
                 hat_sperrkarte = false;
                 aktueller_status = STATUS_BEREIT;
+                transition_animation_timer = jetzt;
+                transition_animation_is_unlock = false;
             }
+        } else {
+            // Nicht freigeschaltete Karte: Verriegelung verweigert, System bleibt entsperrt
+            falsche_sperrkarte_timer = jetzt;
+            transition_animation_timer = 0;
+            fehlversuche++;
         }
-    } else {
-        // Unbekannte UID: Alarm ausloesen und System sperren
-        alarm_an = true;
-        alarm_start_zeit = jetzt;
-        zugriff_erlaubt = false;
-        hat_sperrkarte = false;
-        fehlversuche++;
-        aktueller_status = STATUS_VERWEIGERT;
     }
 
     leds_aktualisieren();
@@ -369,4 +459,14 @@ bool AccessControl_IsWrongCardBlocked(void)
 {
     if (falsche_sperrkarte_timer == 0) return false;
     return (HAL_GetTick() - falsche_sperrkarte_timer < 2000);
+}
+
+bool AccessControl_IsAdminLockout(void)
+{
+    return admin_lockout;
+}
+
+uint8_t AccessControl_GetConsecutiveFailures(void)
+{
+    return aufeinanderfolgende_fehlversuche;
 }
